@@ -77,7 +77,7 @@ void CreateProductsTable(char FileName[]);
 void CreateStoresTable(char FileName[]);
 void CreateExchangeRatesTable(char FileName[]);
 void CreateDatasetTables();
-int BinarySearch(FILE *fp, unsigned int valueToSearch, int file);
+int BinarySearch(FILE *fp, unsigned long int valueToSearch, int file);
 int BubbleSortCustomersByCustomerKey();
 int BubbleSortSalesByProductKey();
 int BubbleSortProductsByProductName();

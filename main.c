@@ -42,7 +42,7 @@ void SecondOption(int flag){
     }
     finish = clock();
     totalSeconds = ((double)(finish - start))/CLOCKS_PER_SEC;
-    printf("-------------------------------------------------------------------------------------------\n");
+    printf("\n-------------------------------------------------------------------------------------------\n");
     printf("Time used to produce this listing: "); PrintExecutionTime(totalSeconds);
     printf("\n*********************************LAST LINE OF THE REPORT***********************************\n");
     printf("-------------------------------------------------------------------------------------------\n\n\n");
@@ -63,6 +63,7 @@ void FifthOption(int flag){
     }
     finish = clock();
     totalSeconds = ((double)(finish - start))/CLOCKS_PER_SEC;
+    
     printf("-------------------------------------------------------------------------------------------\n");
     printf("Time used to produce this listing: "); PrintExecutionTime(totalSeconds);
     printf("\n*********************************LAST LINE OF THE REPORT***********************************\n");

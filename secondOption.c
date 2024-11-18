@@ -33,7 +33,7 @@ void DeterminatedCustomersLocation(FILE *fpProducts, FILE *fpSales, FILE *fpCust
 			    return;
 			}
 
-    	    printf("\n%-32s %-32s %-32s %-32s\n", "Continent", "Country", "State", "City");
+    	    printf("\n32%-s %-32s %-32s %-32s\n", "Continent", "Country", "State", "City");
     	    printf("______________________________________________________________________________________________________\n");
 
     	    fseek(fpSales, sizeof(Sales) * (positionSales - 1), SEEK_SET);

@@ -357,8 +357,9 @@ void CreateDatasetTables(){
     CreateProductsTable("Products.csv");
 }
 
-int BinarySearch(FILE *fp, unsigned int valueToSearch, int file){
-    unsigned int start = 0, middle = 0, end = 0, sizeOfRecord = 0, key = 0;
+int BinarySearch(FILE *fp, unsigned long int valueToSearch, int file){
+    unsigned int start = 0, middle = 0, end = 0, sizeOfRecord = 0;
+    unsigned long int key = 0;
 
     if(file == 1){
 		sizeOfRecord = sizeof(Products);
@@ -366,9 +367,9 @@ int BinarySearch(FILE *fp, unsigned int valueToSearch, int file){
 		sizeOfRecord = sizeof(Customers);	
 	} else if(file == 3){
 		sizeOfRecord = sizeof(Sales);
-    } else if(file == 4){
+	} else if(file == 4){
         sizeOfRecord = sizeof(Sales);
-	} else {
+    } else {
 		return -1;
 	}
 
@@ -381,22 +382,27 @@ int BinarySearch(FILE *fp, unsigned int valueToSearch, int file){
 		if (file == 1){
 			Products recordProduct;
 			fread(&recordProduct, sizeOfRecord, 1, fp);
-			key = (unsigned int) recordProduct.ProductKey;
+			key = (unsigned long int) recordProduct.ProductKey;
+            //printf("productsKey que agarro: %u\t", recordProduct.ProductKey);
 		} else if (file == 2){
 			Customers recordCustomer;
 			fread(&recordCustomer, sizeOfRecord, 1, fp);
-			key = (unsigned int) recordCustomer.CustomerKey;
+			key = (unsigned long int) recordCustomer.CustomerKey;
 		} else if (file == 3){
 			Sales recordSale;
 			fread(&recordSale, sizeOfRecord, 1, fp);
-			key = (unsigned int) recordSale.ProductKey;
-		} else if (file == 4){
+			key = (unsigned short int) recordSale.ProductKey;
+		}  else if(file == 4){
             Sales recordSale;
-            fread(&recordSale, sizeOfRecord, 1, fp);
-            key = (unsigned int) recordSale.CustomerKey;
-        }
+			fread(&recordSale, sizeOfRecord, 1, fp);
+			key = (unsigned int) recordSale.CustomerKey;
+        } else {
+		    return -1;
+	    }
+        //printf("Start: %u\tEnd: %u\tMiddle: %u\tValueToSearch: %lu\tKey: %lu\n", start, end, middle, valueToSearch, key);
         
         if(key == valueToSearch){
+            //printf("\nPOR FIN\n");
             return middle;
         }else if(key < valueToSearch){
 			start = middle + 1;
