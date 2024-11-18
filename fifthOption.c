@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, int amountOfCustomers, int flag){
+void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, FILE *fpExchange, int amountOfCustomers, int flag){
  Sales saleRecord;
  Customers customerRecord;
  Products productRecord;
+ ExchangeRates exchangeRecord;
 
  char customerName[40] = "";
  unsigned int customerKey = 0;
@@ -82,7 +83,35 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
                 }
             }
             
+          
             int index = 0;
+
+            int positionOfDate = BinarySearchExchangeRates(fpExchange, recordsPurchases[index]);
+
+            if(positionOfDate == -1){
+                printf("no se encontró la fecha");
+            }
+            
+              /*fseek(fpSales, sizeof(Sales) * (positionSales - 1), SEEK_SET);
+    	    fread(&saleRecord, sizeof(Sales), 1, fpSales);
+
+    	    for( int i = positionSales - 1; i >= 0 && productKey == saleRecord.ProductKey; i -= 1){
+    	    	fseek(fpSales, sizeof(Sales) * (i - 1), SEEK_SET);
+    	    	fread(&saleRecord, sizeof(Sales), 1, fpSales);
+
+    	    	positionSales = i;
+    	    }*/
+
+            fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET);
+            fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+
+            
+
+            for(int i = positionOfDate;   ) {
+                
+            }
+            
+
             for(int i = 0; i < numOfOrders; i++){
                 printf("Order Date: %hu/%u/%u            Order Number: %li\n", recordsPurchases[index].OrderDate.MM, recordsPurchases[index].OrderDate.DD, recordsPurchases[index].OrderDate.AAAA, recordsPurchases[index].OrderNumber);
                 printf("%-20s  %-60s  %-10s  %-6s %s \n", "Product Key", "Product Name", "Quantity", "Value", recordsPurchases[index].CurrencyCode);
@@ -102,6 +131,8 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
                 index++;
                 printf("_________________________________________________________________________________________________________________\n");
             }
+
+
             fclose(fpTemporal); 
        } 
     }
@@ -114,11 +145,12 @@ void BubbleSortOption5(){
     BubbleSortCustomersByCustomerName();
     BubbleSortSalesByCustomerKey();
 
-    FILE *fpProducts = fopen("ProductsTable", "rb+");	//Pointer to ProductsTable
-    FILE *fpCustomers = fopen("CustomersTable", "rb+");	//Pointer to CustomersTable
-    FILE *fpSales = fopen("SalesTable", "rb+");			//Pointer to SalesTable	
+    FILE *fpProducts = fopen("productsTable", "rb+");	//Pointer to ProductsTable
+    FILE *fpCustomers = fopen("customersTable", "rb+");	//Pointer to CustomersTable
+    FILE *fpSales = fopen("salesTable", "rb+");			//Pointer to SalesTable	
+    FILE *fpExchange = fopen("exchangeTable", "rb+");
 
-    ShowCustomersPurchases(fpSales, fpCustomers, fpProducts, amountOfCustomers, 1);
+    ShowCustomersPurchases(fpSales, fpCustomers, fpProducts, fpExchange, amountOfCustomers, 1);
 
     fclose(fpCustomers);
     fclose(fpProducts);

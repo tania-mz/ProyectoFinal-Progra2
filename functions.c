@@ -413,6 +413,54 @@ int BinarySearch(FILE *fp, unsigned long int valueToSearch, int file){
 	return -1;
 }
 
+int BinarySearchExchangeDate(FILE *fp, Sales recordSale){
+    unsigned int start = 0, middle = 0, end = 0, sizeOfRecord = sizeof(ExchangeRates);
+    ExchangeRates record;
+    fseek(fp, 0 ,SEEK_END);
+    end = ( ftell(fp) / sizeOfRecord ) - 1;
+    while (start <= end){
+        middle = start + ((end - start) / 2);
+        fseek(fp, middle * sizeOfRecord, SEEK_SET);
+        fread(&record, sizeOfRecord, 1, fp);
+
+        char key[11] = "", currencyCode[3] = "";
+        strcpy(key, record.Date);
+        strcpy(currencyCode, record.Currency);
+
+        //printf("Start: %u, Middle: %u, End: %u, Clave: '%s', Buscando: %d/%d/%d ", start, middle, end, key, recordSale.OrderDate.MM, recordSale.OrderDate.DD, recordSale.OrderDate.AAAA);
+        //printf(",KeyAux: %s\n", keyAux);
+        
+        int currentMonth = 0, currentDay = 0, currentYear = 0;
+        int month = 0, day = 0, year = 0;
+        month = recordSale.OrderDate.MM;
+        day = recordSale.OrderDate.DD;
+        year = recordSale.OrderDate.AAAA;
+
+        //Leer el formato flexible (con o sin ceros iniciales)
+        sscanf(key, "%d/%d/%d", &currentMonth, &currentDay, &currentYear);
+        if(currentYear == year){
+            if(currentMonth == month){
+                if(currentDay == day){
+                    return middle;
+                } else if(currentDay > day){
+                    end = middle - 1;
+                } else {
+                    start = middle + 1;
+                }
+            } else if(currentMonth > month){
+                end = middle - 1;
+            } else {
+                start = middle + 1;
+            }
+        } else if(currentYear > year){
+            end = middle - 1;
+        } else {
+            start = middle + 1;
+        }
+    }
+	return -1;
+}
+
 int BubbleSortCustomersByCustomerKey(){
     int numCustomersRecords = TellNumRecords("customersTable", sizeof(Customers)); 
 	FILE *fpCustomers = fopen("customersTable", "rb+");	
