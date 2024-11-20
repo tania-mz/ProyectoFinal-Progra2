@@ -31,7 +31,7 @@ void SecondOption(int flag){
     double totalSeconds = 0.0;
     start = clock();
     printf("-------------------------------------------------------------------------------------------\n");
-    printf("Company Global Electronics Retailer\n");
+    printf("\033[1mCompany Global Electronics Retailer\033[0m\n");
     ShowDateTime();
     printf("Products list ordered by ProductName + Continent + Country + State + City\n");
     printf("-------------------------------------------------------------------------------------------\n");
@@ -53,7 +53,7 @@ void FifthOption(int flag){
     double totalSeconds = 0.0;
     start = clock();
     printf("-------------------------------------------------------------------------------------------\n");
-    printf("Company Global Electronics Retailer\n");
+    printf("\033[1mCompany Global Electronics Retailer\033[0m\n");
     ShowDateTime();
     printf("Customer list ordered by Costumer name + Order date for sale + ProductKey\n");
     if(flag){
@@ -71,7 +71,7 @@ void FifthOption(int flag){
 }
 
 void PrintMenu(){
-    printf("Company Global Electronics Retailer\n"
+    printf("\033[1mCompany Global Electronics Retailer\033[0m\n"
        "Options menu\n"
        "0. Exit program\n"
        "1. Construction of the Database with the dataset tables\n"

@@ -90,5 +90,7 @@ int CompareProductsByProductName(void *a, void *b);
 int CompareCustomersByLocation(void *a, void *b);
 void Merge(void *array, int left, int right, int medium, int recordSize, int (*compare)(void*, void*));
 void MergeSort(void *array, int left, int right, int recordSize, int (*compare)(void*, void*));
+void MergeFiles(FILE *file, int left, int middle, int right, int recordSize, int (*compare)(void*, void*)) ;
+void MergeSortFile(FILE *file, int left, int right, int recordSize, int (*compare)(void*, void*)) ;
 
 #endif // TABLESFUNCTIONS_H

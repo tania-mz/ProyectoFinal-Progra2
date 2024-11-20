@@ -8,6 +8,7 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
  Customers customerRecord;
  Products productRecord;
  ExchangeRates exchangeRecord;
+ ExchangeRates staticExchangeRecord;
 
  char customerName[40] = "";
  unsigned int customerKey = 0;
@@ -86,7 +87,7 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
           
             int index = 0;
 
-            int positionOfDate = BinarySearchExchangeRates(fpExchange, recordsPurchases[index]);
+            int positionOfDate = BinarySearchExchangeDate(fpExchange, recordsPurchases[index]);
 
             if(positionOfDate == -1){
                 printf("no se encontró la fecha");
@@ -105,10 +106,16 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
             fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET);
             fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
 
-            
+            fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET);
+            fread(&staticExchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
 
-            for(int i = positionOfDate;   ) {
-                
+            for(int i = positionOfDate;  strcmp(exchangeRecord.Date, staticExchangeRecord.Date) == 0 && i>0; i-- )  {
+                fseek(fpExchange, sizeof(ExchangeRates) * i-1, SEEK_SET);
+                fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+            }
+            if(strcmp(exchangeRecord.Date, staticExchangeRecord.Date) != 0){
+                fseek(fpExchange, sizeof(ExchangeRates) * i+1, SEEK_SET);
+                fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
             }
             
 
