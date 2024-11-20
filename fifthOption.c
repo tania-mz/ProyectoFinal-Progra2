@@ -8,11 +8,12 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
  Customers customerRecord;
  Products productRecord;
  ExchangeRates exchangeRecord;
+ ExchangeRates staticExchangeRecord;
 
  char customerName[40] = "";
  unsigned int customerKey = 0;
 
- for(int i = 0; i < amountOfCustomers; i++){
+ for(int i = 0; i < amountOfCustomers && i < 5; i++){
     fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
     fread(&customerRecord, sizeof(customerRecord), 1, fpCustomers);
 
@@ -83,34 +84,47 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
                 }
             }
             
-          
-            int index = 0;
+            int index = 0; // Index que se usa para moverse en cada venta 
 
-            int positionOfDate = BinarySearchExchangeRates(fpExchange, recordsPurchases[index]);
+            int positionOfDate = BinarySearchExchangeDate(fpExchange, recordsPurchases[index]); //posicion cualquiera que saco del binary
 
-            if(positionOfDate == -1){
+            if(positionOfDate == -1){   
                 printf("no se encontró la fecha");
-            }
-            
-              /*fseek(fpSales, sizeof(Sales) * (positionSales - 1), SEEK_SET);
-    	    fread(&saleRecord, sizeof(Sales), 1, fpSales);
+            } else { //Despues de comprobar que si se haya sacado una fecha del binary lo que hacemos es pasar al resto de procesbica
 
-    	    for( int i = positionSales - 1; i >= 0 && productKey == saleRecord.ProductKey; i -= 1){
-    	    	fseek(fpSales, sizeof(Sales) * (i - 1), SEEK_SET);
-    	    	fread(&saleRecord, sizeof(Sales), 1, fpSales);
-
-    	    	positionSales = i;
-    	    }*/
-
+            //Ubicamos el puntero en donde encontramos la fecha
             fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET);
             fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
 
-            
-
-            for(int i = positionOfDate;   ) {
-                
+            if(strcmp("USD", exchangeRecord.Currency) != 0){ //Verificamos si ya es el inicial, que sería en dolares, pues siempre tiene ese orden
+                for(int i = positionOfDate; strcmp(exchangeRecord.Currency,"USD") != 0; i--){ //for para devolverme al primero
+                    positionOfDate = i; //Voy igualando la posicion de la fecha al i, porque me estoy devolviendo
+                    fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET); //Y ubico el puntero para volver a comparar en la otra vuelta del for
+                    fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+                } 
+                positionOfDate++; //Le sumo una más ya que en la ultima vuelta no le sumo, puesto que encontro la posicion del primero, por eso me toca sumarle manualmente es que no alcanzo a sumar porque la condicion ya no se cumplia
             }
             
+            //Reviso cual es la currency de la venta que voy a calcular, y le sumo esa cantidad a positionOfDate
+            if(strcmp(recordsPurchases[index].CurrencyCode, "USD") == 0){
+                positionOfDate += 0;
+            } else if (strcmp(recordsPurchases[index].CurrencyCode, "CAD") == 0){
+                positionOfDate += 1;
+            } else if (strcmp(recordsPurchases[index].CurrencyCode, "AUD") == 0){
+                positionOfDate += 2;
+            } else if (strcmp(recordsPurchases[index].CurrencyCode, "EUR") == 0){
+                positionOfDate += 3;
+            } else if (strcmp(recordsPurchases[index].CurrencyCode, "GBP") == 0){
+                positionOfDate += 4;
+            }
+
+            fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET);
+            fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange); //Me ubico en esa posicion final
+            
+            float value = exchangeRecord.Exchange; //Extraigo el valor de la moneda en esa fecha y la guardo en value
+
+            /*El siguiente paso seria multiplicar ese value por la cantidad de procutos(recordsPurchases[index].Quantity) y luego multiplicar por cuanto vale cada producto(productrecord.unitprice) 
+            eso se puede hacer en el while, y tambien crear las variables para ir guardadno los usbtotales que es por cada orden y el total que es de todas las ordenes del cliente(suma de subtotales)*/
 
             for(int i = 0; i < numOfOrders; i++){
                 printf("Order Date: %hu/%u/%u            Order Number: %li\n", recordsPurchases[index].OrderDate.MM, recordsPurchases[index].OrderDate.DD, recordsPurchases[index].OrderDate.AAAA, recordsPurchases[index].OrderNumber);
@@ -131,8 +145,7 @@ void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, 
                 index++;
                 printf("_________________________________________________________________________________________________________________\n");
             }
-
-
+        }
             fclose(fpTemporal); 
        } 
     }

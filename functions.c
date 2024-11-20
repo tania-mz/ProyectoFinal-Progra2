@@ -494,6 +494,29 @@ int BubbleSortCustomersByCustomerKey(){
 	return 1;
 }
 
+int BubbleSortExchangeRatesByCurrencyCode(FILE *fp){
+	ExchangeRates reg1, reg2;
+
+  	for ( int step = 0; step < 5 - 1; step += 1 ){
+    	for ( int i = 0; i < 5 - step - 1; i += 1 ){
+            fseek(fp, sizeof(ExchangeRates) * i, SEEK_SET);
+            fread(&reg1, sizeof(ExchangeRates), 1, fp);
+            fseek(fp, sizeof(ExchangeRates) * (i + 1), SEEK_SET);
+            fread(&reg2, sizeof(ExchangeRates), 1, fp);
+      		if (strcmp(reg1.Currency, reg2.Currency) > 0){
+				fseek(fp, sizeof(ExchangeRates) * i, SEEK_SET);
+                fwrite(&reg2, sizeof(ExchangeRates), 1, fp);
+                fseek(fp, sizeof(ExchangeRates) * (i + 1), SEEK_SET);
+                fwrite(&reg1, sizeof(ExchangeRates), 1, fp);
+      		}
+        }
+    }
+
+	return 1;
+}
+
+
+
 int BubbleSortSalesByProductKey(){
 	long int amountSalesRecords = TellNumRecords("salesTable", sizeof(Sales));
 	FILE *fPSales = fopen("salesTable", "rb+");
