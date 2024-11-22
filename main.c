@@ -1,8 +1,33 @@
+/*
+Fecha de publicación: 22/11/2024
+Hora de publicación: 2:59 AM
+Versión de su código: 7.5
+Autor. Ing(c) Tania Marin Zamora
+Nombre del lenguaje utilizado: C
+Versión del lenguaje utilizado: C11
+Versión del compilador utilizado: MinGW.org GCC-6.3.0-1
+Versión del S.O sobre el que compilo y probo su código: Windows 11 Home Single Language, 23H2
+Presentado a: Doctor Ricardo Moreno Laverde
+Universidad Tecnológica de Pereira
+Programa de Ingeniería de Sistemas y Computación
+Asignatura IS284 Programación II
+Un descriptivo de que hace el programa: Este programa es un manejador de archivos, toma los datos extraidos de un DataSet, los maneja y da estadísticas al respecto e información sobre los datos
+Salvedades:
+No se garantiza su funcionamiento en otras versiones del sistema operativo, en otros sistemas operativos, en otras versiones del 
+lenguaje, del compilador u otro compilador.
+Primero se debe ejecutar la opcion 1 del menu, creando las tablas, asi mismo, esta debe de ejecutarse antes de cualquier otra opcion
+No se garantiza el funcionamiento de los ordenamientos BubbleSort en menos de 4-5 horas
+Para hacer las pruebas sobre el código, se recomienda usar las opciones de MergeSort, pues son más rápidas de ejecutar 
+No se garantizan resultados para valores fuera del estandar permitido
+*/
+
 #include <stdio.h>
 #include "functions.c"
 #include <time.h>
 #include "secondOption.c"
 #include "fifthOption.c"
+#include "fourthOption.c"
+#include "thirdOption.c"
 
 void ShowDateTime() {
     time_t current_time = time(NULL);
@@ -70,6 +95,50 @@ void FifthOption(int flag){
     printf("-------------------------------------------------------------------------------------------\n\n\n");
 }
 
+void ThirdOption(int flag){
+    int start = 0, finish = 0;
+    double totalSeconds = 0.0;
+    start = clock();
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("Company Global Electronics Retailer\n");
+    ShowDateTime();
+    printf("Customer list ordered by Costumer name + Order date for sale + ProductKey\n");
+    if(flag){
+      BubbleSortOption3();
+    }else{
+      MergeSortOption3(); 
+    }
+    finish = clock();
+    totalSeconds = ((double)(finish - start))/CLOCKS_PER_SEC;
+    
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("Time used to produce this listing: "); PrintExecutionTime(totalSeconds);
+    printf("\n*********************************LAST LINE OF THE REPORT***********************************\n");
+    printf("-------------------------------------------------------------------------------------------\n\n\n");
+}
+
+void FourthOption(int flag){
+    int start = 0, finish = 0;
+    double totalSeconds = 0.0;
+    start = clock();
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("Company Global Electronics Retailer\n");
+    ShowDateTime();
+    printf("Customer list ordered by Costumer name + Order date for sale + ProductKey\n");
+    if(flag){
+      BubbleSortOption4();
+    }else{
+      MergeSortOption4(); 
+    }
+    finish = clock();
+    totalSeconds = ((double)(finish - start))/CLOCKS_PER_SEC;
+    
+    printf("-------------------------------------------------------------------------------------------\n");
+    printf("Time used to produce this listing: "); PrintExecutionTime(totalSeconds);
+    printf("\n*********************************LAST LINE OF THE REPORT***********************************\n");
+    printf("-------------------------------------------------------------------------------------------\n\n\n");
+}
+
 void PrintMenu(){
     printf("Company Global Electronics Retailer\n"
        "Options menu\n"
@@ -104,13 +173,13 @@ int main(){
         } else if (option == 22) { 
             SecondOption(0);                               
         } else if (option == 31) {                       
-            printf("Executing option 3.1\n");
+            ThirdOption(1);
         } else if (option == 32) {                       
-            printf("Executing option 3.2\n");
+            ThirdOption(0);
         } else if (option == 41) {                       
-            printf("Executing option 4.1\n");
+            FourthOption(1);
         } else if (option == 42) {                       
-            printf("Executing option 4.2\n");
+            FourthOption(0);
         } else if (option == 51) {                       
             FifthOption(1);
         } else if (option == 52) {                       

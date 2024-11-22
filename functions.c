@@ -423,12 +423,8 @@ int BinarySearchExchangeDate(FILE *fp, Sales recordSale){
         fseek(fp, middle * sizeOfRecord, SEEK_SET);
         fread(&record, sizeOfRecord, 1, fp);
 
-        char key[11] = "", currencyCode[3] = "";
+        char key[11] = "";
         strcpy(key, record.Date);
-        strcpy(currencyCode, record.Currency);
-
-        //printf("Start: %u, Middle: %u, End: %u, Clave: '%s', Buscando: %d/%d/%d ", start, middle, end, key, recordSale.OrderDate.MM, recordSale.OrderDate.DD, recordSale.OrderDate.AAAA);
-        //printf(",KeyAux: %s\n", keyAux);
         
         int currentMonth = 0, currentDay = 0, currentYear = 0;
         int month = 0, day = 0, year = 0;
@@ -461,36 +457,27 @@ int BinarySearchExchangeDate(FILE *fp, Sales recordSale){
 	return -1;
 }
 
+//---------------------------------Bubble sort Functions -------------------------------------------------
 int BubbleSortCustomersByCustomerKey(){
     int numCustomersRecords = TellNumRecords("customersTable", sizeof(Customers)); 
-	FILE *fpCustomers = fopen("customersTable", "rb+");	
-
-	Customers *customersRecords = (Customers *) calloc(numCustomersRecords, sizeof(Customers)); //
-
-	for(int i = 0; i < numCustomersRecords; i += 1){
-		fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
-		fread(&customersRecords[i], sizeof(Customers), 1, fpCustomers);
-	}
-
+	FILE *fp = fopen("customersTable", "rb+");	
+    Customers reg1, reg2;
 	//For to sort Customers
   	for ( int step = 0; step < numCustomersRecords - 1; step += 1 ){
     	for ( int i = 0; i < numCustomersRecords - step - 1; i += 1 ){
-      		if (customersRecords[i].CustomerKey > customersRecords[i + 1].CustomerKey){
-				Customers temp = customersRecords[i];
-				customersRecords[i] = customersRecords[i + 1];
-				customersRecords[i + 1] = temp;
+            fseek(fp, sizeof(Customers) * i, SEEK_SET);
+            fread(&reg1, sizeof(Customers), 1, fp);
+            fseek(fp, sizeof(Customers) * (i + 1), SEEK_SET);
+            fread(&reg2, sizeof(Customers), 1, fp);
+      		if (reg1.CustomerKey > reg2.CustomerKey){
+				fseek(fp, sizeof(Customers) * i, SEEK_SET);
+                fwrite(&reg2, sizeof(Customers), 1, fp);
+                fseek(fp, sizeof(Customers) * (i + 1), SEEK_SET);
+                fwrite(&reg1, sizeof(Customers), 1, fp);
       		}
         }
     }
-
-	//For to write each record alredy ordered in the file CustomersTable
-	for (int i = 0; i < numCustomersRecords; i += 1){
-		fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
-		fwrite(&customersRecords[i], sizeof(Customers), 1, fpCustomers);
-	}
-    free(customersRecords);
-	customersRecords = NULL;
-	fclose(fpCustomers);
+	fclose(fp);
 	return 1;
 }
 
@@ -515,138 +502,133 @@ int BubbleSortExchangeRatesByCurrencyCode(FILE *fp){
 	return 1;
 }
 
-
-
 int BubbleSortSalesByProductKey(){
 	long int amountSalesRecords = TellNumRecords("salesTable", sizeof(Sales));
-	FILE *fPSales = fopen("salesTable", "rb+");
+	FILE *fp = fopen("salesTable", "rb+");
+    Sales reg1, reg2;
 
-	Sales *salesRecords = (Sales *) calloc(amountSalesRecords, sizeof(Sales));
-
-	for(int i = 0; i < amountSalesRecords; i++){
-		fseek(fPSales, sizeof(Sales) * i, SEEK_SET);
-		fread(&salesRecords[i], sizeof(Sales), 1, fPSales);
-	}
-
-	for (int step = 0; step < amountSalesRecords - 1; step += 1){
-    	for (int i = 0; i < amountSalesRecords - step - 1; i += 1){
-      		if (salesRecords[i].ProductKey > salesRecords[i + 1].ProductKey){
-				Sales temp = salesRecords[i];
-				salesRecords[i] = salesRecords[i + 1];
-				salesRecords[i + 1] = temp;
+	for ( int step = 0; step < amountSalesRecords - 1; step += 1 ){
+    	for ( int i = 0; i < amountSalesRecords - step - 1; i += 1 ){
+            fseek(fp, sizeof(Sales) * i, SEEK_SET);
+            fread(&reg1, sizeof(Sales), 1, fp);
+            fseek(fp, sizeof(Sales) * (i + 1), SEEK_SET);
+            fread(&reg2, sizeof(Sales), 1, fp);
+      		if (reg1.ProductKey > reg2.ProductKey){
+				fseek(fp, sizeof(Sales) * i, SEEK_SET);
+                fwrite(&reg2, sizeof(Sales), 1, fp);
+                fseek(fp, sizeof(Sales) * (i + 1), SEEK_SET);
+                fwrite(&reg1, sizeof(Sales), 1, fp);
       		}
         }
     }
-
-	for(int i = 0; i < amountSalesRecords; i++){
-		fseek(fPSales, sizeof(Sales) * i, SEEK_SET);
-		fwrite(&salesRecords[i], sizeof(Sales), 1, fPSales);
-	}
-    free(salesRecords);
-	salesRecords = NULL;
-	fclose(fPSales);
+	fclose(fp);
 	return 1;
 }
 
 int BubbleSortProductsByProductName(){
 	long int amountProductsRecords = TellNumRecords("productsTable", sizeof(Products));
-	FILE *fPProducts = fopen("productsTable", "rb+");
-	
-	Products *productsRecords = (Products * ) calloc(amountProductsRecords, sizeof(Products));
+	FILE *fp = fopen("productsTable", "rb+");
+	Products reg1, reg2;
 
-	for(int i = 0; i < amountProductsRecords; i++){
-		fseek(fPProducts, sizeof(Products) * i, SEEK_SET);
-		fread(&productsRecords[i], sizeof(Products), 1, fPProducts);
-	}
-
-	for (int step = 0; step < amountProductsRecords - 1; step += 1){
-    	for (int i = 0; i < amountProductsRecords - step - 1; i += 1){
-      		if(strcmp (productsRecords[i].ProductName, productsRecords[i + 1].ProductName) > 0){
-				Products temp = productsRecords[i];
-				productsRecords[i] = productsRecords[i + 1];
-				productsRecords[i + 1] = temp;
+    for ( int step = 0; step < amountProductsRecords - 1; step += 1 ){
+    	for ( int i = 0; i < amountProductsRecords - step - 1; i += 1 ){
+            fseek(fp, sizeof(Products) * i, SEEK_SET);
+            fread(&reg1, sizeof(Products), 1, fp);
+            fseek(fp, sizeof(Products) * (i + 1), SEEK_SET);
+            fread(&reg2, sizeof(Products), 1, fp);
+      		if (strcmp(reg1.ProductName, reg2.ProductName) > 0){
+				fseek(fp, sizeof(Products) * i, SEEK_SET);
+                fwrite(&reg2, sizeof(Products), 1, fp);
+                fseek(fp, sizeof(Products) * (i + 1), SEEK_SET);
+                fwrite(&reg1, sizeof(Products), 1, fp);
       		}
         }
     }
+	fclose(fp);
+	return 1;
+}
 
-	for (int i = 0; i < amountProductsRecords; i++){
-		fseek(fPProducts, sizeof(Products) * i, SEEK_SET);
-		fwrite(&productsRecords[i], sizeof(Products), 1, fPProducts);
-	}
-    free(productsRecords);
-	productsRecords = NULL;
-	fclose(fPProducts);
+int BubbleSortProductsByProductKey(){
+	long int amountProductsRecords = TellNumRecords("productsTable", sizeof(Products));
+	FILE *fp = fopen("productsTable", "rb+");
+	Products reg1, reg2;
+
+    for ( int step = 0; step < amountProductsRecords - 1; step += 1 ){
+    	for ( int i = 0; i < amountProductsRecords - step - 1; i += 1 ){
+            fseek(fp, sizeof(Products) * i, SEEK_SET);
+            fread(&reg1, sizeof(Products), 1, fp);
+            fseek(fp, sizeof(Products) * (i + 1), SEEK_SET);
+            fread(&reg2, sizeof(Products), 1, fp);
+      		if (reg1.ProductKey > reg2.ProductKey){
+				fseek(fp, sizeof(Products) * i, SEEK_SET);
+                fwrite(&reg2, sizeof(Products), 1, fp);
+                fseek(fp, sizeof(Products) * (i + 1), SEEK_SET);
+                fwrite(&reg1, sizeof(Products), 1, fp);
+      		}
+        }
+    }
+	fclose(fp);
 	return 1;
 }
 
 int BubbleSortCustomersByCustomerName(){
     int numCustomersRecords = TellNumRecords("customersTable", sizeof(Customers)); 
-	FILE *fpCustomers = fopen("customersTable", "rb+");	
+	FILE *fp = fopen("customersTable", "rb+");	
+	Customers reg1, reg2; //
 
-	Customers *customersRecords = (Customers *) calloc(numCustomersRecords, sizeof(Customers)); //
-
-	for(int i = 0; i < numCustomersRecords; i += 1){
-		fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
-		fread(&customersRecords[i], sizeof(Customers), 1, fpCustomers);
-	}
-
-	//For to sort Customers
   	for ( int step = 0; step < numCustomersRecords - 1; step += 1 ){
     	for ( int i = 0; i < numCustomersRecords - step - 1; i += 1 ){
-      		if (strcmp(customersRecords[i].Name, customersRecords[i + 1].Name) > 0){
-				Customers temp = customersRecords[i];
-				customersRecords[i] = customersRecords[i + 1];
-				customersRecords[i + 1] = temp;
+            fseek(fp, sizeof(Customers) * i, SEEK_SET);
+            fread(&reg1, sizeof(Customers), 1, fp);
+            fseek(fp, sizeof(Customers) * (i + 1), SEEK_SET);
+            fread(&reg2, sizeof(Customers), 1, fp);
+      		if (strcmp(reg1.Name, reg2.Name) > 0){
+				fseek(fp, sizeof(Customers) * i, SEEK_SET);
+                fwrite(&reg2, sizeof(Customers), 1, fp);
+                fseek(fp, sizeof(Customers) * (i + 1), SEEK_SET);
+                fwrite(&reg1, sizeof(Customers), 1, fp);
       		}
         }
     }
-
-	//For to write each record alredy ordered in the file CustomersTable
-	for (int i = 0; i < numCustomersRecords; i += 1){
-		fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
-		fwrite(&customersRecords[i], sizeof(Customers), 1, fpCustomers);
-	}
-    free(customersRecords);
-	customersRecords = NULL;
-	fclose(fpCustomers);
+	fclose(fp);
 	return 1;
 }
 
 int BubbleSortSalesByCustomerKey(){
 	long int amountSalesRecords = TellNumRecords("salesTable", sizeof(Sales));
-	FILE *fPSales = fopen("salesTable", "rb+");
+	FILE *fp= fopen("salesTable", "rb+");
+	Sales reg1, reg2;
 
-	Sales *salesRecords = (Sales *) calloc(amountSalesRecords, sizeof(Sales));
-
-	for(int i = 0; i < amountSalesRecords; i++){
-		fseek(fPSales, sizeof(Sales) * i, SEEK_SET);
-		fread(&salesRecords[i], sizeof(Sales), 1, fPSales);
-	}
-
-	for (int step = 0; step < amountSalesRecords - 1; step += 1){
-    	for (int i = 0; i < amountSalesRecords - step - 1; i += 1){
-      		if (salesRecords[i].CustomerKey > salesRecords[i + 1].CustomerKey){
-				Sales temp = salesRecords[i];
-				salesRecords[i] = salesRecords[i + 1];
-				salesRecords[i + 1] = temp;
+	for ( int step = 0; step < amountSalesRecords - 1; step += 1 ){
+    	for ( int i = 0; i < amountSalesRecords - step - 1; i += 1 ){
+            fseek(fp, sizeof(Sales) * i, SEEK_SET);
+            fread(&reg1, sizeof(Sales), 1, fp);
+            fseek(fp, sizeof(Sales) * (i + 1), SEEK_SET);
+            fread(&reg2, sizeof(Sales), 1, fp);
+      		if (reg1.CustomerKey > reg2.CustomerKey){
+				fseek(fp, sizeof(Sales) * i, SEEK_SET);
+                fwrite(&reg2, sizeof(Sales), 1, fp);
+                fseek(fp, sizeof(Sales) * (i + 1), SEEK_SET);
+                fwrite(&reg1, sizeof(Sales), 1, fp);
       		}
         }
     }
-
-	for(int i = 0; i < amountSalesRecords; i++){
-		fseek(fPSales, sizeof(Sales) * i, SEEK_SET);
-		fwrite(&salesRecords[i], sizeof(Sales), 1, fPSales);
-	}
-    free(salesRecords);
-	salesRecords = NULL;
-	fclose(fPSales);
+	fclose(fp);
 	return 1;
 }
+
+//--------------------------------Funciones de comparacion para el Merge--------------------------
 
 int CompareCustomersByCustomerKey(void *a, void *b){
     Customers *firstCust = (Customers *) a;
     Customers *secondCust = (Customers *) b;
     return firstCust->CustomerKey - secondCust->CustomerKey;
+}
+
+int CompareCustomersByCustomerName(void *a, void *b){
+    Customers *custA = (Customers *)a;
+    Customers *custB = (Customers *)b;
+    return strcmp(custA->Name, custB->Name);
 }
 
 int CompareSalesByProductKey(void *a, void *b){
@@ -685,9 +667,34 @@ int CompareCustomersByLocation(void *a, void *b){
     return result;
 }
 
-void Merge(void *array, int left, int right, int medium, int recordSize, int (*compare)(void*, void*)) {
-    int firstArray = medium - left + 1;
-    int secondArray = right - medium;
+int CompareSalesByOrderNumber(void *a, void *b){
+    Sales *saleA = (Sales *)a;
+    Sales *saleB = (Sales *)b;
+    long int comparation = saleA->OrderNumber - saleB->OrderNumber;
+    
+    if(comparation != 0){
+        return (int)comparation;
+    } else{
+        return (int)(saleA->ProductKey - saleB->ProductKey);
+    }
+    
+}
+
+int CompareSalesByCustomerKey(void *a, void *b){
+    Sales *saleA = (Sales *)a;
+    Sales *saleB = (Sales *)b;
+    return saleA->CustomerKey - saleB->CustomerKey;
+}
+
+int CompareProductsByProductKey(void *a, void *b){
+    Products *prodA = (Products *)a;
+    Products *prodB = (Products *)b;
+    return prodA->ProductKey - prodB->ProductKey;
+}
+
+void MergeArray(void* array, int left, int right, int middle, int recordSize, int (*compare)(void*, void*)){
+    int firstArray = middle - left + 1;
+    int secondArray = right - middle;
     void *temporalLeft = calloc(firstArray,  recordSize);
     void *temporalRight = calloc(secondArray,  recordSize);
 
@@ -698,7 +705,7 @@ void Merge(void *array, int left, int right, int medium, int recordSize, int (*c
 
     //Copy the values of the second half
     for (int j = 0; j < secondArray; j++) {
-        memcpy((char*)temporalRight + j * recordSize, (char*)array + (medium + 1 + j) * recordSize, recordSize);
+        memcpy((char*)temporalRight + j * recordSize, (char*)array + (middle + 1 + j) * recordSize, recordSize);
     }
 
     int i = 0, j = 0;
@@ -734,18 +741,116 @@ void Merge(void *array, int left, int right, int medium, int recordSize, int (*c
     free(temporalRight); temporalRight = NULL;
 }
 
-void MergeSort(void *array, int left, int right, int recordSize, int (*compare)(void*, void*)) {
+void MergeSortArray(void* array, int left, int right, int recordSize, int (*compare)(void*, void*)){
+    if (left < right) {
+        int middle = left + ((right - left) / 2);
+
+        //Recursive call for the first half
+        MergeSortArray(array, left, middle, recordSize, compare);
+
+        //Recursive call for the second half
+        MergeSortArray(array, middle + 1, right, recordSize, compare);
+
+        //Order and combine the two halfs
+        MergeArray(array, left, right, middle, recordSize, compare);
+    }
+}
+
+void MergeFile(FILE *file, int left, int right, int medium, int recordSize, int (*compare)(void*, void*)) {
+    int firstArray = medium - left + 1;
+    int secondArray = right - medium;
+
+    // Crear archivos temporales
+    FILE *leftFile = fopen("tempLeft.bin", "wb+");
+    FILE *rightFile = fopen("tempRight.bin", "wb+");
+
+    void *buffer = malloc(recordSize);
+
+    // Copiar los valores de la primera mitad al archivo temporal izquierdo
+    for (int i = 0; i < firstArray; i++) {
+        fseek(file, (left + i) * recordSize, SEEK_SET);
+        fread(buffer, recordSize, 1, file);
+        fwrite(buffer, recordSize, 1, leftFile);
+    }
+
+    // Copiar los valores de la segunda mitad al archivo temporal derecho
+    for (int j = 0; j < secondArray; j++) {
+        fseek(file, (medium + 1 + j) * recordSize, SEEK_SET);
+        fread(buffer, recordSize, 1, file);
+        fwrite(buffer, recordSize, 1, rightFile);
+    }
+
+    fseek(leftFile, 0, SEEK_SET);
+    fseek(rightFile, 0, SEEK_SET);
+
+    int i = 0, j = 0;
+    int posicion = left;
+
+    // Mezclar y ordenar los registros de los archivos temporales de vuelta al archivo original
+    while (i < firstArray && j < secondArray) {
+        fseek(leftFile, i * recordSize, SEEK_SET);
+        fseek(rightFile, j * recordSize, SEEK_SET);
+
+        void *leftRecord = malloc(recordSize);
+        void *rightRecord = malloc(recordSize);
+
+        fread(leftRecord, recordSize, 1, leftFile);
+        fread(rightRecord, recordSize, 1, rightFile);
+
+        if (compare(leftRecord, rightRecord) <= 0) {
+            fseek(file, posicion * recordSize, SEEK_SET);
+            fwrite(leftRecord, recordSize, 1, file);
+            i++;
+        } else {
+            fseek(file, posicion * recordSize, SEEK_SET);
+            fwrite(rightRecord, recordSize, 1, file);
+            j++;
+        }
+
+        posicion++;
+        free(leftRecord);
+        free(rightRecord);
+    }
+
+    // Copiar los elementos restantes del archivo temporal izquierdo
+    while (i < firstArray) {
+        fseek(leftFile, i * recordSize, SEEK_SET);
+        fread(buffer, recordSize, 1, leftFile);
+        fseek(file, posicion * recordSize, SEEK_SET);
+        fwrite(buffer, recordSize, 1, file);
+        i++;
+        posicion++;
+    }
+
+    // Copiar los elementos restantes del archivo temporal derecho
+    while (j < secondArray) {
+        fseek(rightFile, j * recordSize, SEEK_SET);
+        fread(buffer, recordSize, 1, rightFile);
+        fseek(file, posicion * recordSize, SEEK_SET);
+        fwrite(buffer, recordSize, 1, file);
+        j++;
+        posicion++;
+    }
+
+    // Liberar memoria y cerrar archivos temporales
+    free(buffer);
+    fclose(leftFile);
+    fclose(rightFile);
+    remove("tempLeft.bin");
+    remove("tempRight.bin");
+}
+
+void MergeSortFile(FILE *file, int left, int right, int recordSize, int (*compare)(void*, void*)) {
     if (left < right) {
         int medium = left + ((right - left) / 2);
 
-        //Recursive call for the first half
-        MergeSort(array, left, medium, recordSize, compare);
+        // Llamada recursiva para la primera mitad
+        MergeSortFile(file, left, medium, recordSize, compare);
 
-        //Recursive call for the second half
-        MergeSort(array, medium + 1, right, recordSize, compare);
+        // Llamada recursiva para la segunda mitad
+        MergeSortFile(file, medium + 1, right, recordSize, compare);
 
-        //Order and combine the two halfs
-        Merge(array, left, right, medium, recordSize, compare);
-
+        // Combinar las dos mitades
+        MergeFile(file, left, right, medium, recordSize, compare);
     }
 }

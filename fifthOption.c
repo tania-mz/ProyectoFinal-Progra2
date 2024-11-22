@@ -1,175 +1,267 @@
 #include <stdio.h>
-#include "functions.h"
 #include <stdlib.h>
 #include <string.h>
+#include "Functions.h"
 
 void ShowCustomersPurchases(FILE *fpSales, FILE *fpCustomers, FILE *fpProducts, FILE *fpExchange, int amountOfCustomers, int flag){
- Sales saleRecord;
- Customers customerRecord;
- Products productRecord;
- ExchangeRates exchangeRecord;
- ExchangeRates staticExchangeRecord;
+	Sales saleRecord;				//Used to store a record of SalesTable and get its information
+	Customers customerRecord;		//Used to store a record of CustomersTable and store it temporarely in TemporalFileOption2
+	ExchangeRates exchangeRecord;
 
- char customerName[40] = "";
- unsigned int customerKey = 0;
+    char customerName[40] = ""; 				//Used to store the ProductName of each Product in ProductsTable
+	unsigned int customerKey = 0; 						//Used to store the ProductKey of each Product in ProductTable
 
- for(int i = 0; i < amountOfCustomers && i < 5; i++){
-    fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
-    fread(&customerRecord, sizeof(customerRecord), 1, fpCustomers);
+    for(int i = 0; i < amountOfCustomers; i++){
+        fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
+    	fread(&customerRecord, sizeof(Customers), 1, fpCustomers);
 
-    strcpy(customerName, customerRecord.Name);
-    printf("\n\n/=================================================================================================================/");
-    printf("\n%s\n\n", customerName);
+        strcpy(customerName, customerRecord.Name);
+        printf("\n\n/=================================================================================================================/");
+        printf("\nCustomer name: %-40s", customerName);
 
-    customerKey = customerRecord.CustomerKey;
+        customerKey = customerRecord.CustomerKey;
 
-    int positionOfCustomer = BinarySearch(fpSales, customerKey, 4);
-    
-    if(positionOfCustomer == -1){
-    		printf(" -No purchases reported\n");
-    	} else {
-    		FILE *fpTemporal = fopen("TemporalFileOption5", "wb+");
-			if (fpTemporal == NULL) {
-			    printf("Error abriendo archivo temporal.\n");
-			    return;
-			}
+        int positionOfCustomer = BinarySearch(fpSales, customerKey, 4);
 
-            fseek(fpSales, sizeof(Sales) * (positionOfCustomer - 1), SEEK_SET);
-    	    fread(&saleRecord, sizeof(Sales), 1, fpSales);
+        if(positionOfCustomer == -1){
+            printf(" - No purchases reported\n");
+        } else {
 
-    	    for( int i = positionOfCustomer - 1; i >= 0 && customerKey == saleRecord.CustomerKey; i -= 1){
+			FILE *fpTemporalPurchases = fopen("recordPurchases", "wb+");
+
+            fseek(fpSales, (positionOfCustomer - 1) * sizeof(Sales), SEEK_SET);
+            fread(&saleRecord, sizeof(Sales), 1, fpSales);
+
+            for( int i = positionOfCustomer - 1; i >= 0 && customerKey == saleRecord.CustomerKey; i--){
     	    	fseek(fpSales, sizeof(Sales) * (i - 1), SEEK_SET);
     	    	fread(&saleRecord, sizeof(Sales), 1, fpSales);
-
-    	    	positionOfCustomer = i;
+    	    	positionOfCustomer = i; //Changing positionSales to be the index of first record in sales with the current CustomerKey
     	    }
 
             fseek(fpSales, sizeof(Sales) * positionOfCustomer, SEEK_SET);
             fread(&saleRecord, sizeof(Sales), 1, fpSales);
 
-            int order = saleRecord.OrderNumber;
-            int limitOfSales = TellNumRecords("salesTable", sizeof(Sales));
-            int numOfPurchases = 0;
-            int numOfOrders = 1;
-            for(int i = positionOfCustomer; customerKey == saleRecord.CustomerKey && i < limitOfSales; i++){
-                numOfPurchases++;
-                if(order != saleRecord.OrderNumber){
-                    numOfOrders++;
-                    order = saleRecord.OrderNumber;
-                }
-                fseek(fpSales, sizeof(Sales) * (i + 1), SEEK_SET);
+            int numOfOrders = 0, numOfPurchases = 0, limitOfSales = TellNumRecords("salesTable", sizeof(Sales));
+			long orderNumber = saleRecord.OrderNumber;
+            //index es para moverse en sales y i es para moverse en el temporal
+            for(int index = positionOfCustomer, i = 0; saleRecord.CustomerKey == customerKey && index < limitOfSales; index++, i++){
+                fseek(fpTemporalPurchases, i * sizeof(Sales), SEEK_SET);
+				fwrite(&saleRecord, sizeof(Sales), 1, fpTemporalPurchases);
+				numOfPurchases++;
+                fseek(fpSales, (index + 1) * sizeof(Sales), SEEK_SET);
                 fread(&saleRecord, sizeof(Sales), 1, fpSales);
+				if(orderNumber != saleRecord.OrderNumber){
+					numOfOrders++;
+					orderNumber = saleRecord.OrderNumber;
+				}
             }
 
-            Sales *recordsPurchases = (Sales * ) calloc(numOfPurchases, sizeof(Sales));
+			if(flag){
+				for(int step = 0; step < numOfPurchases - 1; step++){
+					Sales reg1, reg2;
+					for(int i = 0; i < numOfPurchases - step - 1; i++){
+						fseek(fpTemporalPurchases, sizeof(Sales) * i, SEEK_SET);
+						fread(&reg1, sizeof(Sales), 1, fpTemporalPurchases);
 
-            for(int i = 0; i < numOfPurchases; i++){
-                fseek(fpSales, sizeof(Sales) * (positionOfCustomer + i), SEEK_SET);
-                fread(&recordsPurchases[i], sizeof(Sales), 1, fpSales);
-            }
+						fseek(fpTemporalPurchases, sizeof(Sales) * (i + 1), SEEK_SET);
+						fread(&reg2, sizeof(Sales), 1, fpTemporalPurchases);
+						int comparation = reg1.OrderNumber - reg2.OrderNumber;
+						if(comparation == 0){
+							comparation = reg1.ProductKey - reg2.ProductKey;
+						}
+						if(comparation > 0){
+							fseek(fpTemporalPurchases, sizeof(Sales) * i, SEEK_SET);
+							fwrite(&reg2, sizeof(Sales), 1, fpTemporalPurchases);
 
-            for(int step = 0; step < numOfPurchases - 1; step++){
-                for(int i = 0; i < numOfPurchases - step - 1; i++){
-                    if(recordsPurchases[i].OrderNumber > recordsPurchases[i + 1].OrderNumber){
-                        Sales temp = recordsPurchases[i];
-                        recordsPurchases[i] = recordsPurchases[i + 1];
-						recordsPurchases[i + 1] = temp;
-                    } else if (recordsPurchases[i].OrderNumber == recordsPurchases[i + 1].OrderNumber){
-                        if(recordsPurchases[i].ProductKey > recordsPurchases[i + 1].ProductKey){
-                            Sales temp = recordsPurchases[i];
-                            recordsPurchases[i] = recordsPurchases[i + 1];
-						    recordsPurchases[i + 1] = temp;
-                        }
-                    }
-                }
-            }
-            
-            int index = 0; // Index que se usa para moverse en cada venta 
+							fseek(fpTemporalPurchases, sizeof(Sales) * (i + 1), SEEK_SET);
+							fwrite(&reg1, sizeof(Sales), 1, fpTemporalPurchases);
+						}
+					}
+				}
+			} else {
+				MergeSortFile(fpTemporalPurchases, 0, numOfPurchases - 1, sizeof(Sales), CompareSalesByOrderNumber);
+			}
 
-            int positionOfDate = BinarySearchExchangeDate(fpExchange, recordsPurchases[index]); //posicion cualquiera que saco del binary
+			Sales firstPurchaseRecord, secondPurchaseRecord;//Se crean dos para compararlos en el while
 
-            if(positionOfDate == -1){   
-                printf("no se encontró la fecha");
-            } else { //Despues de comprobar que si se haya sacado una fecha del binary lo que hacemos es pasar al resto de procesbica
+			fseek(fpSales, positionOfCustomer * sizeof(Sales), SEEK_SET);
+            fread(&saleRecord, sizeof(Sales), 1, fpSales); //Me vuelvo a ubicar en la primera venta del
+			
+			int orderIndex = 0; 			// Inicializar el índice de órdenes
+			float totalValue = 0.0;      	// Total acumulado para todas las órdenes
 
-            //Ubicamos el puntero en donde encontramos la fecha
-            fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET);
-            fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+			for (int order = 0; order < numOfOrders; order++) {
+			    // Leer el primer registro de la orden actual
+			    fseek(fpTemporalPurchases, sizeof(Sales) * orderIndex, SEEK_SET);
+			    fread(&firstPurchaseRecord, sizeof(Sales), 1, fpTemporalPurchases);
 
-            if(strcmp("USD", exchangeRecord.Currency) != 0){ //Verificamos si ya es el inicial, que sería en dolares, pues siempre tiene ese orden
-                for(int i = positionOfDate; strcmp(exchangeRecord.Currency,"USD") != 0; i--){ //for para devolverme al primero
-                    positionOfDate = i; //Voy igualando la posicion de la fecha al i, porque me estoy devolviendo
-                    fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET); //Y ubico el puntero para volver a comparar en la otra vuelta del for
-                    fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
-                } 
-                positionOfDate++; //Le sumo una más ya que en la ultima vuelta no le sumo, puesto que encontro la posicion del primero, por eso me toca sumarle manualmente es que no alcanzo a sumar porque la condicion ya no se cumplia
-            }
-            
-            //Reviso cual es la currency de la venta que voy a calcular, y le sumo esa cantidad a positionOfDate
-            if(strcmp(recordsPurchases[index].CurrencyCode, "USD") == 0){
-                positionOfDate += 0;
-            } else if (strcmp(recordsPurchases[index].CurrencyCode, "CAD") == 0){
-                positionOfDate += 1;
-            } else if (strcmp(recordsPurchases[index].CurrencyCode, "AUD") == 0){
-                positionOfDate += 2;
-            } else if (strcmp(recordsPurchases[index].CurrencyCode, "EUR") == 0){
-                positionOfDate += 3;
-            } else if (strcmp(recordsPurchases[index].CurrencyCode, "GBP") == 0){
-                positionOfDate += 4;
-            }
+			    // Leer el siguiente registro para comparación
+			    fseek(fpTemporalPurchases, sizeof(Sales) * (orderIndex + 1), SEEK_SET);
+			    fread(&secondPurchaseRecord, sizeof(Sales), 1, fpTemporalPurchases);
 
-            fseek(fpExchange, sizeof(ExchangeRates) * positionOfDate, SEEK_SET);
-            fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange); //Me ubico en esa posicion final
-            
-            float value = exchangeRecord.Exchange; //Extraigo el valor de la moneda en esa fecha y la guardo en value
+			    float exchange = -1.0;
 
-            /*El siguiente paso seria multiplicar ese value por la cantidad de procutos(recordsPurchases[index].Quantity) y luego multiplicar por cuanto vale cada producto(productrecord.unitprice) 
-            eso se puede hacer en el while, y tambien crear las variables para ir guardadno los usbtotales que es por cada orden y el total que es de todas las ordenes del cliente(suma de subtotales)*/
+				// Buscar el tipo de cambio para esta orden
+				int positionExchange = BinarySearchExchangeDate(fpExchange, firstPurchaseRecord); 
+				if (positionExchange != -1){
+					ExchangeRates staticExchangeRecord;
+					fseek(fpExchange, sizeof(ExchangeRates) * positionExchange, SEEK_SET);
+					fread(&staticExchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+					int index = positionExchange;
+					printf("DATE:%s   currency:%s \n", staticExchangeRecord.Date, staticExchangeRecord.Currency);
+					if (strcmp("USD", staticExchangeRecord.Currency) != 0){
+						fseek(fpExchange, sizeof(ExchangeRates) * positionExchange, SEEK_SET);
+						fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+						for (; strcmp("USD", exchangeRecord.Currency) != 0 && index > 0; index--){
+							fseek(fpExchange, sizeof(ExchangeRates) * index, SEEK_SET);
+							fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+						}
+						index++;
+					}
 
-            for(int i = 0; i < numOfOrders; i++){
-                printf("Order Date: %hu/%u/%u            Order Number: %li\n", recordsPurchases[index].OrderDate.MM, recordsPurchases[index].OrderDate.DD, recordsPurchases[index].OrderDate.AAAA, recordsPurchases[index].OrderNumber);
-                printf("%-20s  %-60s  %-10s  %-6s %s \n", "Product Key", "Product Name", "Quantity", "Value", recordsPurchases[index].CurrencyCode);
-                while(index < numOfPurchases + 1 && recordsPurchases[index].OrderNumber == recordsPurchases[index + 1].OrderNumber){
-                    unsigned int productKey = recordsPurchases[index].ProductKey;
-                    int positionOfProduct = BinarySearch(fpProducts, productKey, 1);
-                    fseek(fpProducts, sizeof(Products) * positionOfProduct, SEEK_SET);
-                    fread(&productRecord, sizeof(Products), 1, fpProducts);
-                    printf("%-20d  %-60s  %-6u \n", recordsPurchases[index].ProductKey, productRecord.ProductName, recordsPurchases[index].Quantity);
-                    index++;
-                } 
-                unsigned int productKey = recordsPurchases[index].ProductKey;
-                int positionOfProduct = BinarySearch(fpProducts, productKey, 1);
-                fseek(fpProducts, sizeof(Products) * positionOfProduct, SEEK_SET);
-                fread(&productRecord, sizeof(Products), 1, fpProducts);
-                printf("%-20d  %-60s  %-6u\n", recordsPurchases[index].ProductKey, productRecord.ProductName, recordsPurchases[index].Quantity);
-                index++;
-                printf("_________________________________________________________________________________________________________________\n");
-            }
-        }
-            fclose(fpTemporal); 
-       } 
-    }
-}    
+					printf("\tdate:%s   currency:%s\n" , exchangeRecord.Date , exchangeRecord.Currency );
+					FILE *fpTemporalExchange = tmpfile();
+					for (int i = 0; i < 5; i++, index++){
+						fseek(fpExchange, sizeof(ExchangeRates) * index, SEEK_SET);
+						fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpExchange);
+						fseek(fpTemporalExchange, sizeof(ExchangeRates) * i, SEEK_SET);
+						fwrite(&exchangeRecord, sizeof(ExchangeRates), 1, fpTemporalExchange);
+						//printf("date:%s   currency:%s exchange:%f \n", exchangeRecord.Date, exchangeRecord.Currency, recordExchange.Exchange);
+					}
+
+					int indexTemoralExchange = -1;
+					if (firstPurchaseRecord.CurrencyCode[0] == 'U'){
+						indexTemoralExchange = 0;
+					}
+					else if (firstPurchaseRecord.CurrencyCode[0] == 'C'){
+						indexTemoralExchange = 1;
+					}
+					else if (firstPurchaseRecord.CurrencyCode[0] == 'A'){
+						indexTemoralExchange = 2;
+					}
+					else if (firstPurchaseRecord.CurrencyCode[0] == 'E'){
+						indexTemoralExchange = 3;
+					}
+					else if (firstPurchaseRecord.CurrencyCode[0] == 'G'){
+						indexTemoralExchange = 4;
+					}
+					//printf ("\n\t indextemporal : %i" , indexTemoralExchange);
+					fseek(fpTemporalExchange, sizeof(ExchangeRates) * indexTemoralExchange, SEEK_SET);
+					fread(&exchangeRecord, sizeof(ExchangeRates), 1, fpTemporalExchange);
+                
+					exchange = exchangeRecord.Exchange;
+					//printf("\n fecha : %s     exchange: %f\n", exchangeRecord.Date ,  exchange);
+                   
+					fclose(fpTemporalExchange);
+				}
+
+			    // Mostrar encabezado de la orden
+			    printf("\nOrder date: %hu/%u/%u\tOrder Number: %li\n", 
+			           firstPurchaseRecord.OrderDate.AAAA, firstPurchaseRecord.OrderDate.MM, firstPurchaseRecord.OrderDate.DD, 
+			           firstPurchaseRecord.OrderNumber);
+				printf("%-17s%-100s%-15s%s %s", "ProductKey", "ProductName", "Quantity", "Value", firstPurchaseRecord.CurrencyCode);
+			    printf("_________________________________________________________________________________________________________________________________________________________\n");
+
+			    float subTotal = 0.0;
+			    Products tempProductRecord;
+
+			    // Iterar sobre todos los productos de la misma orden
+			    while (orderIndex < numOfPurchases - 1 && firstPurchaseRecord.OrderNumber == secondPurchaseRecord.OrderNumber) {
+			        unsigned int productKey = firstPurchaseRecord.ProductKey;
+
+			        // Buscar el producto en el archivo de productos
+			        int positionProducts = BinarySearch(fpProducts, productKey, 1);
+			        if (positionProducts != -1) {
+			            fseek(fpProducts, sizeof(Products) * positionProducts, SEEK_SET);
+			            fread(&tempProductRecord, sizeof(Products), 1, fpProducts);
+
+			            // Calcular el valor del producto
+			            float price = tempProductRecord.UnitPriceUSD * exchange * firstPurchaseRecord.Quantity;
+			            printf("%-17hu%-100s%-15hu%.2f\n", tempProductRecord.ProductKey, tempProductRecord.ProductName, firstPurchaseRecord.Quantity, price);
+			            subTotal += price;
+			        }
+
+			        // Avanzar al siguiente registro
+			        orderIndex++;
+
+			        // Actualizar los datos para la próxima iteración
+			        fseek(fpTemporalPurchases, sizeof(Sales) * orderIndex, SEEK_SET);
+			        fread(&firstPurchaseRecord, sizeof(Sales), 1, fpTemporalPurchases);
+
+			        fseek(fpTemporalPurchases, sizeof(Sales) * (orderIndex + 1), SEEK_SET);
+			        fread(&secondPurchaseRecord, sizeof(Sales), 1, fpTemporalPurchases);
+			    }
+
+			    // Procesar el último producto de la orden
+			    unsigned int productKey = firstPurchaseRecord.ProductKey;
+
+			    int positionProducts = BinarySearch(fpProducts, productKey, 1);
+			    if (positionProducts != -1) {
+			        fseek(fpProducts, sizeof(Products) * positionProducts, SEEK_SET);
+			        fread(&tempProductRecord, sizeof(Products), 1, fpProducts);
+
+			        float price = tempProductRecord.UnitPriceUSD * exchange * firstPurchaseRecord.Quantity;
+			        printf("%-17hu%-100s%-15hu%.2f\n", tempProductRecord.ProductKey, tempProductRecord.ProductName, firstPurchaseRecord.Quantity, price);
+			        subTotal += price;
+			    }
+
+			    orderIndex++; // Avanzar al siguiente índice
+			    printf("_________________________________________________________________________________________________________________________________________________________\n");
+				printf("%-117s%-15s%.2lf\n", "", "Subtotal", subTotal);
+			    totalValue += subTotal;
+			}
+
+			// Mostrar el total acumulado
+			printf("%-117s%-15s%.2lf\n", "", "TOTAL", totalValue);
+            fclose(fpTemporalPurchases);
+
+		}
+        printf("\n/--------------------------------------------------------------------------------------------------------------------------------------------------------/\n");
+	}
+}
+
 
 void BubbleSortOption5(){
-    int amountOfCustomers = TellNumRecords("customersTable", sizeof(Customers));
-    printf("%i", amountOfCustomers);
+	//int numRecordsProducts = TellNumRecords("ProductsTable", sizeof(Products)); 	//Quantity of products in ProductsTable
+	int numRecordsCustomers = TellNumRecords("CustomersTable", sizeof(Customers)); 	//Quantity of products in CustomersTable
+	//int numRecordsSales = TellNumRecords("SalesTable", sizeof(Sales)); 				//Quantity of products in SalesTable
 
+	FILE *fpProducts = fopen("ProductsTable", "rb+");	//Pointer to ProductsTable
+    FILE *fpCustomers = fopen("CustomersTable", "rb+");	//Pointer to CustomersTable
+    FILE *fpSales = fopen("SalesTable", "rb+");			//Pointer to SalesTable	
+    FILE *fpExchange = fopen("exchangeTable", "rb+");
+
+    BubbleSortProductsByProductKey();
     BubbleSortCustomersByCustomerName();
     BubbleSortSalesByCustomerKey();
 
-    FILE *fpProducts = fopen("productsTable", "rb+");	//Pointer to ProductsTable
-    FILE *fpCustomers = fopen("customersTable", "rb+");	//Pointer to CustomersTable
-    FILE *fpSales = fopen("salesTable", "rb+");			//Pointer to SalesTable	
-    FILE *fpExchange = fopen("exchangeTable", "rb+");
+	ShowCustomersPurchases(fpSales, fpCustomers, fpProducts, fpExchange, numRecordsCustomers, 1);
 
-    ShowCustomersPurchases(fpSales, fpCustomers, fpProducts, fpExchange, amountOfCustomers, 1);
-
-    fclose(fpCustomers);
     fclose(fpProducts);
+    fclose(fpCustomers);
     fclose(fpSales);
 }
 
 void MergeSortOption5(){
-    //int amountCustomers = TellNumRecords("customersTable", sizeof(Customers));
+	int numRecordsCustomers = TellNumRecords("CustomersTable", sizeof(Customers)); 		//Quantity of products in CustomersTable
+	int numRecordsSales = TellNumRecords("SalesTable", sizeof(Sales)); 					//Quantity of products in SalesTable
+	int numRecordsProducts = TellNumRecords("ProductsTable", sizeof(Products)); 		//Quantity of products in ProductsTable
+
+    FILE *fpCustomers = fopen("CustomersTable", "rb+");	//Pointer to CustomersTable
+    FILE *fpSales = fopen("SalesTable", "rb+");			//Pointer to SalesTable	
+    FILE *fpProducts = fopen("ProductsTable", "rb+");
+    FILE *fpExchange = fopen("exchangeTable", "rb+");
+
+	MergeSortFile(fpCustomers, 0, numRecordsCustomers - 1, sizeof(Customers), CompareCustomersByCustomerName);
+
+	MergeSortFile(fpSales, 0, numRecordsSales - 1, sizeof(Sales), CompareSalesByCustomerKey);
+
+	MergeSortFile(fpProducts, 0, numRecordsProducts - 1, sizeof(Products), CompareProductsByProductKey); //To MergeSortArray the ProductsTable File
+
+	ShowCustomersPurchases(fpSales, fpCustomers, fpProducts, fpExchange, numRecordsCustomers, 0);
+
+    fclose(fpCustomers);
+    fclose(fpSales);
+    fclose(fpProducts);
+    fclose(fpExchange);
 }

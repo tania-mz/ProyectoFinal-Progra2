@@ -79,18 +79,24 @@ void CreateExchangeRatesTable(char FileName[]);
 void CreateDatasetTables();
 int BinarySearch(FILE *fp, unsigned long int valueToSearch, int file);
 int BinarySearchExchangeDate(FILE *fp, Sales recordSale);
-int BinarySearchExchangeCurrency(FILE *fp, ExchangeRates record);
 int BubbleSortCustomersByCustomerKey();
 int BubbleSortSalesByProductKey();
 int BubbleSortProductsByProductName();
 int BubbleSortCustomersByCustomerName();
 int BubbleSortSalesByCustomerKey();
+int BubbleSortProductsByProductKey();
 int BubbleSortExchangeRatesByCurrencyCode(FILE *fp);
 int CompareCustomersByCustomerKey(void *a, void *b);
 int CompareSalesByProductKey(void *a, void *b);
 int CompareProductsByProductName(void *a, void *b);
 int CompareCustomersByLocation(void *a, void *b);
-void Merge(void *array, int left, int right, int medium, int recordSize, int (*compare)(void*, void*));
-void MergeSort(void *array, int left, int right, int recordSize, int (*compare)(void*, void*));
+int CompareSalesByOrderNumber(void *a, void *b);
+int CompareSalesByCustomerKey(void *a, void *b);
+int CompareProductsByProductKey(void *a, void *b);
+int CompareCustomersByCustomerName(void *a, void *b);
+void MergeArray(void* array, int left, int right, int middle, int recordSize, int (*compare)(void*, void*));
+void MergeSortArray(void* array, int left, int right, int recordSize, int (*compare)(void*, void*));
+void MergeSortFile(FILE *file, int left, int right, int recordSize, int (*compare)(void*, void*));
+void MergeFile(FILE *file, int left, int right, int medium, int recordSize, int (*compare)(void*, void*));
 
 #endif // TABLESFUNCTIONS_H

@@ -17,10 +17,9 @@ void DeterminatedCustomersLocation(FILE *fpProducts, FILE *fpSales, FILE *fpCust
     	fread(&productRecord, sizeof(productRecord), 1, fpProducts);
 
     	strcpy(productName, productRecord.ProductName);
-    	printf("\nCustomer name: %s\n", productName);
+    	printf("\nProduct name: %s\n", productName);
 
 		productKey = productRecord.ProductKey;
-
 
     	int positionSales = BinarySearch(fpSales, productKey, 3);
 
@@ -39,10 +38,9 @@ void DeterminatedCustomersLocation(FILE *fpProducts, FILE *fpSales, FILE *fpCust
     	    fseek(fpSales, sizeof(Sales) * (positionSales - 1), SEEK_SET);
     	    fread(&saleRecord, sizeof(Sales), 1, fpSales);
 
-    	    for( int i = positionSales - 1; i >= 0 && productKey == saleRecord.ProductKey; i -= 1){
+    	    for( int i = positionSales - 1; i >= 0 && productKey == saleRecord.ProductKey; i--){
     	    	fseek(fpSales, sizeof(Sales) * (i - 1), SEEK_SET);
     	    	fread(&saleRecord, sizeof(Sales), 1, fpSales);
-
     	    	positionSales = i;
     	    }
 
@@ -58,83 +56,52 @@ void DeterminatedCustomersLocation(FILE *fpProducts, FILE *fpSales, FILE *fpCust
 				if (positionCustomers != -1) {
                     fseek(fpCustomers, sizeof(Customers) * positionCustomers, SEEK_SET);
                     fread(&customerRecord, sizeof(Customers), 1, fpCustomers);
-
                     fwrite(&customerRecord, sizeof(Customers), 1, fpTemporal);
                     numOfBuyers++;
                 }
 
 				fseek(fpSales, sizeof(Sales) * (index + 1), SEEK_SET);
 				fread(&saleRecord, sizeof(Sales), 1, fpSales);
-
 				index++;
 			}
 			
-			Customers *recordsCustomers = (Customers *) calloc(numOfBuyers, sizeof(Customers));
-
-			//For to store the records of CustomersTable in the "array" of Customers
-			for(int i = 0; i < numOfBuyers; i += 1){
-				//printf("\nArray Customers %i", i + 1);
-				fseek(fpTemporal, sizeof(Customers) * i, SEEK_SET);
-				fread(&recordsCustomers[i], sizeof(Customers), 1, fpTemporal);
-			}
-
 			if(flag){
-			//For to sort Customers
-  			for ( int step = 0; step < numOfBuyers - 1; step += 1 ){
-				//printf("\nSort Customers %i", step + 1);
-    			for ( int i = 0; i < numOfBuyers - step - 1; i += 1 ){
+					// Ordenamiento burbuja directamente en el archivo temporal
+                for (int step = 0; step < numOfBuyers - 1; step++) {
+                    for (int i = 0; i < numOfBuyers - step - 1; i++) {
+                        Customers customer1, customer2;
+                        fseek(fpTemporal, sizeof(Customers) * i, SEEK_SET);
+                        fread(&customer1, sizeof(Customers), 1, fpTemporal);
+                        fread(&customer2, sizeof(Customers), 1, fpTemporal);
 
-					int comparation = strcmp(recordsCustomers[i].Continent, recordsCustomers[i + 1].Continent);
-    		  		if (comparation > 0){
-						Customers temp = recordsCustomers[i]; //Temporal variable to exchange the records
-						recordsCustomers[i] = recordsCustomers[i + 1];
-						recordsCustomers[i + 1] = temp;
-    		  		} else if(comparation == 0){
+                        int comparation = strcmp(customer1.Continent, customer2.Continent);
+                        if (comparation > 0 ||
+                            (comparation == 0 && strcmp(customer1.Country, customer2.Country) > 0) ||
+                            (comparation == 0 && strcmp(customer1.Country, customer2.Country) == 0 &&
+                             strcmp(customer1.State, customer2.State) > 0) ||
+                            (comparation == 0 && strcmp(customer1.Country, customer2.Country) == 0 &&
+                             strcmp(customer1.State, customer2.State) == 0 &&
+                             strcmp(customer1.City, customer2.City) > 0)) {
 
-						comparation = strcmp(recordsCustomers[i].Country, recordsCustomers[i + 1].Country);
-						if (comparation > 0){
-							Customers temp = recordsCustomers[i]; //Temporal variable to exchange the records
-							recordsCustomers[i] = recordsCustomers[i + 1];
-							recordsCustomers[i + 1] = temp;
-						} else if (comparation == 0){
-
-							comparation = strcmp(recordsCustomers[i].State, recordsCustomers[i + 1].State);
-							if (comparation > 0){
-								Customers temp = recordsCustomers[i]; //Temporal variable to exchange the records
-								recordsCustomers[i] = recordsCustomers[i + 1];
-								recordsCustomers[i + 1] = temp;
-							} else if (comparation == 0){
-
-								comparation = strcmp(recordsCustomers[i].City, recordsCustomers[i + 1].City);
-								if (comparation > 0){
-									Customers temp = recordsCustomers[i]; //Temporal variable to exchange the records
-									recordsCustomers[i] = recordsCustomers[i + 1];
-									recordsCustomers[i + 1] = temp;
-								}
-							}
-						}
-					}
-    		    }
-    		}
+                            // Intercambiar registros en el archivo
+                            fseek(fpTemporal, sizeof(Customers) * i, SEEK_SET);
+                            fwrite(&customer2, sizeof(Customers), 1, fpTemporal);
+                            fwrite(&customer1, sizeof(Customers), 1, fpTemporal);
+                        }
+                    }
+                }
 			} else {
-				MergeSort(recordsCustomers, 0, numOfBuyers -1, sizeof(Customers), CompareCustomersByLocation);
+				MergeSortFile(fpTemporal, 0, numOfBuyers -1, sizeof(Customers), CompareCustomersByLocation);
 			}
 
 			//For to write each record alredy ordered in the file CustomersTable
-			for (int i = 0; i < numOfBuyers; i += 1){
-				//printf("\nArchivo Customers %i", i + 1);
-				fseek(fpTemporal, sizeof(Customers) * i, SEEK_SET);
-				fwrite(&recordsCustomers[i], sizeof(Customers), 1, fpTemporal);
-			}
-
-			for(int i  = 0; i < numOfBuyers ; i++){
-				fseek(fpTemporal, sizeof(Customers) * i, SEEK_SET);
-				fread(&customerRecord, sizeof(Customers), 1, fpTemporal);
-				printf("%-32s %-32s %-32s %-32s\n", customerRecord.Continent, customerRecord.Country, customerRecord.State, customerRecord.City);
-			}
+			rewind(fpTemporal);
+			for (int i = 0; i < numOfBuyers; i++) {
+                fread(&customerRecord, sizeof(Customers), 1, fpTemporal);
+                printf("%-32s %-32s %-32s %-32s\n", customerRecord.Continent, customerRecord.Country, customerRecord.State, customerRecord.City);
+            }
 			fclose(fpTemporal);
-			free(recordsCustomers);
-			recordsCustomers = NULL;
+			remove("TemporalFileOption2");			
  		}
 	}
 }
@@ -151,19 +118,6 @@ void BubbleSortOption2(){
 	FILE *fpProducts = fopen("ProductsTable", "rb+");	//Pointer to ProductsTable
     FILE *fpCustomers = fopen("CustomersTable", "rb+");	//Pointer to CustomersTable
     FILE *fpSales = fopen("SalesTable", "rb+");			//Pointer to SalesTable	
-
-	if (fpProducts == NULL){
-		printf("Error opening the 'ProductsTable' File");
-		return;
-	}
-	if (fpCustomers == NULL){
-		printf("Error opening the 'CustomersTable' File");
-		return;
-	}
-	if (fpSales == NULL){
-		printf("Error opening the 'SalesTable' File");
-		return;
-	}
 	
 	DeterminatedCustomersLocation(fpProducts, fpSales, fpCustomers, numRecordsProducts, 1);
 
@@ -181,51 +135,23 @@ void MergeSortOption2(){
     FILE *fpCustomers = fopen("CustomersTable", "rb+");	//Pointer to CustomersTable
     FILE *fpSales = fopen("SalesTable", "rb+");			//Pointer to SalesTable	
 
-	Customers *customersRecord = (Customers *) calloc(numRecordsCustomers, sizeof(Customers));
+	MergeSortFile(fpCustomers, 0, numRecordsCustomers - 1, sizeof(Customers), CompareCustomersByCustomerKey);
 
-	for(int i = 0; i < numRecordsCustomers; i++){
-		fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
-		fread(&customersRecord[i], sizeof(Customers), 1, fpCustomers);
-	}
+	MergeSortFile(fpSales, 0, numRecordsSales - 1, sizeof(Sales), CompareSalesByProductKey);
 
-	MergeSort(customersRecord, 0, numRecordsCustomers - 1, sizeof(Customers), CompareCustomersByCustomerKey);
+	MergeSortFile(fpProducts, 0, numRecordsProducts - 1, sizeof(Products), CompareProductsByProductName);
 
-	for(int i = 0; i < numRecordsCustomers; i++){
-		fseek(fpCustomers, sizeof(Customers) * i, SEEK_SET);
-		fwrite(&customersRecord[i], sizeof(Customers), 1, fpCustomers);
-	}
+	fclose(fpProducts);
+    fclose(fpCustomers);
+    fclose(fpSales);
 
-	Sales *salesRecord = (Sales *) calloc(numRecordsSales, sizeof(Sales));
-
-	for(int i = 0; i < numRecordsSales; i++){
-		fseek(fpSales, sizeof(Sales) * i, SEEK_SET);
-		fread(&salesRecord[i], sizeof(Customers), 1, fpSales);
-	}
-
-	MergeSort(salesRecord, 0, numRecordsSales - 1, sizeof(Sales), CompareSalesByProductKey);
-
-	for(int i = 0; i < numRecordsSales; i++){
-		fseek(fpSales, sizeof(Sales) * i, SEEK_SET);
-		fwrite(&salesRecord[i], sizeof(Sales), 1, fpSales);
-	}
-
-	Products *productsRecord = (Products *) calloc(numRecordsProducts, sizeof(Products));
-
-	for(int i = 0; i < numRecordsProducts; i++){
-		fseek(fpProducts, sizeof(Products) * i, SEEK_SET);
-		fread(&productsRecord[i], sizeof(Products), 1, fpProducts);
-	}
-
-	MergeSort(productsRecord, 0, numRecordsProducts - 1, sizeof(Products), CompareProductsByProductName);
-
-	for(int i = 0; i < numRecordsProducts; i++){
-		fseek(fpProducts, sizeof(Products) * i, SEEK_SET);
-		fwrite(&productsRecord[i], sizeof(Products), 1, fpProducts);
-	}
-
-	free(productsRecord);
-	free(customersRecord);
-	free(salesRecord);
+	fpProducts = fopen("ProductsTable", "rb"); // Reabrir en modo solo lectura para la función
+    fpSales = fopen("SalesTable", "rb");
+    fpCustomers = fopen("CustomersTable", "rb");
 
 	DeterminatedCustomersLocation(fpProducts, fpSales, fpCustomers, numRecordsProducts, 0);
+
+	fclose(fpProducts);
+    fclose(fpSales);
+    fclose(fpCustomers);
 }
